@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Payment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .payment-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 20px;
+        }
+
+        .payment-details {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin: 20px 0;
+        }
+
+        .pay-button {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .pay-button:hover {
+            background: #38a169;
+        }
+
+        .success-message {
+            color: #48bb78;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .discount {
+            color: #48bb78;
+        }
+
+        .overtime {
+            color: #e53e3e;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="logo">🚗 Smart Parking</div>
+
+        <div class="payment-details">
+            <h3>Payment Details</h3>
+            <div class="detail-row">
+                <span>Vehicle Number:</span>
+                <span id="vehicleNumber">-</span>
+            </div>
+            <div class="detail-row">
+                <span>Car Type:</span>
+                <span id="carType">-</span>
+            </div>
+            <div class="detail-row">
+                <span>Base Price:</span>
+                <span id="basePrice">-</span>
+            </div>
+            <div class="detail-row">
+                <span>Discount/Extra:</span>
+                <span id="discount" class="discount">-</span>
+            </div>
+            <div class="detail-row">
+                <span>Overtime Charge:</span>
+                <span id="overtime" class="overtime">-</span>
+            </div>
+        </div>
+
+        <div class="total-amount" id="totalAmount">Total: ₹0</div>
+
+        <button class="pay-button" onclick="processPayment()">Pay Now</button>
+
+        <div class="success-message" id="successMessage" style="display: none;">
+            ✅ Payment Successful! You may now exit.
+        </div>
+    </div>
+
+    <script>
+        // Get payment details from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const vehicleNumber = urlParams.get('vehicle') || 'ABC123';
+        const carType = urlParams.get('type') || 'Private';
+        const amount = urlParams.get('amount') || '50';
+
+        // Calculate price based on car type
+        let basePrice = 50;
+        let discount = 0;
+        let overtime = 0;
+
+        if (carType === 'EV') {
+            discount = basePrice * 0.20;
+        } else if (carType === 'Commercial') {
+            discount = -basePrice * 0.10;
+        }
+
+        // Check for overtime in URL
+        const overtimeParam = urlParams.get('overtime');
+        if (overtimeParam) {
+            overtime = parseFloat(overtimeParam);
+        }
+
+        const totalAmount = basePrice - discount + overtime;
+
+        // Update display
+        document.getElementById('vehicleNumber').textContent = vehicleNumber;
+        document.getElementById('carType').textContent = carType;
+        document.getElementById('basePrice').textContent = `₹${basePrice}`;
+        document.getElementById('discount').textContent = `₹${discount.toFixed(2)}`;
+        document.getElementById('overtime').textContent = `₹${overtime.toFixed(2)}`;
+        document.getElementById('totalAmount').textContent = `Total: ₹${totalAmount.toFixed(2)}`;
+
+        function processPayment() {
+            // Simulate payment processing
+            const payButton = document.querySelector('.pay-button');
+            const successMessage = document.getElementById('successMessage');
+
+            payButton.textContent = 'Processing...';
+            payButton.disabled = true;
+
+            setTimeout(() => {
+                payButton.style.display = 'none';
+                successMessage.style.display = 'block';
+
+                // Update Firebase (in real implementation, this would be server-side)
+                updatePaymentStatus(vehicleNumber, 'completed');
+
+            }, 2000);
+        }
+
+        function updatePaymentStatus(vehicleNumber, status) {
+            // This would typically be handled by your backend
+            console.log(`Payment ${status} for vehicle ${vehicleNumber}`);
+
+            // Send confirmation (in real implementation)
+            fetch('/api/update-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    vehicle: vehicleNumber,
+                    status: status,
+                    amount: totalAmount
+                })
+            });
+        }
+    </script>
+</body>
+</html>

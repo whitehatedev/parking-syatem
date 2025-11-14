@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: #1a2a6c;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .parking-lot {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .parking-title {
+            font-size: 1.5rem;
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .slots-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .slot {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border: 3px solid #ddd;
+            position: relative;
+        }
+
+        .slot.available {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .slot.occupied {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .slot.reserved {
+            border-color: #ffc107;
+            background: #fffef0;
+        }
+
+        .slot-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .slot-status {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .slot-time {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .slot-distance {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .remaining-time {
+            font-size: 0.8rem;
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .time-warning {
+            animation: blink 2s infinite;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .booking-form-container {
+            flex: 1;
+        }
+
+        .booking-form {
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .step {
+            display: none;
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .step-number {
+            background: #1a2a6c;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #1a2a6c;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.2);
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .option {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .option:hover {
+            background: #e9e9e9;
+        }
+
+        .option.selected {
+            background: #1a2a6c;
+            color: white;
+            border-color: #1a2a6c;
+        }
+
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            gap: 15px;
+        }
+
+        .mic-btn {
+            background: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .mic-btn:hover {
+            background: #0e1a4a;
+            transform: scale(1.05);
+        }
+
+        .mic-btn.listening {
+            background: #b21f1f;
+            animation: pulse 1.5s infinite;
+        }
+
+        .voice-feedback {
+            flex: 1;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            font-style: italic;
+            color: #555;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-prev {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-prev:hover {
+            background: #e5e5e5;
+        }
+
+        .btn-next {
+            background: #1a2a6c;
+            color: white;
+        }
+
+        .btn-next:hover {
+            background: #0e1a4a;
+        }
+
+        .btn-book {
+            background: #28a745;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-book:hover {
+            background: #218838;
+        }
+
+        .confirmation {
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+
+        .confirmation.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .confirmation-icon {
+            font-size: 4rem;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .confirmation h2 {
+            color: #1a2a6c;
+            margin-bottom: 15px;
+        }
+
+        .booking-details {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            width: 150px;
+            color: #555;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .instructions {
+            background: #e9f7fe;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #1a2a6c;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .email-examples {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .speech-hints {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .system-status {
+            background: #e9f7fe;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .system-status.connected {
+            background: #f0fff4;
+            color: #28a745;
+        }
+
+        .system-status.disconnected {
+            background: #fff5f5;
+            color: #dc3545;
+        }
+
+        .notifications-panel {
+            background: #fff3cd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .notifications-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .notification-item {
+            padding: 8px;
+            border-bottom: 1px solid #ffeaa7;
+            font-size: 0.9rem;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard {
+                flex-direction: column;
+            }
+
+            .container {
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .step-title {
+                font-size: 1.3rem;
+            }
+
+            .options {
+                flex-direction: column;
+            }
+
+            .voice-controls {
+                flex-direction: column;
+            }
+
+            .navigation {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Smart Parking System</h1>
+            <p class="subtitle">Real-time parking availability with voice booking & SMS notifications</p>
+        </header>
+
+        <div class="dashboard">
+            <div class="parking-lot">
+                <h2 class="parking-title">Parking Lot Status</h2>
+                <div class="slots-container" id="slotsContainer">
+                    <!-- Slots will be populated by JavaScript -->
+                </div>
+
+                <div class="system-status" id="systemStatus">
+                    Connecting to parking sensors...
+                </div>
+
+                <div class="notifications-panel">
+                    <div class="notifications-title">📢 Notifications Status</div>
+                    <div class="notification-item" id="notificationStatus">
+                        GSM Module: Initializing...
+                    </div>
+                    <div class="notification-item" id="smsStatus">
+                        SMS Service: Ready
+                    </div>
+                </div>
+            </div>
+
+            <div class="booking-form-container">
+                <div class="booking-form">
+                    <!-- Step 1: Car Number -->
+                    <div class="step active" id="step1">
+                        <div class="step-title">
+                            <div class="step-number">1</div>
+                            Enter Car Number
+                        </div>
+                        <div class="input-group">
+                            <label for="carNumber">Car Registration Number</label>
+                            <input type="text" id="carNumber" class="input-field" placeholder="Speak your car number">
+                        </div>
+                        <div class="voice-controls">
+                            <button class="mic-btn" id="mic1">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" fill="white"/>
+                                    <path d="M19 12C19 12.3405 18.9716 12.6744 18.917 13H17C17.0606 12.6735 17.0833 12.3379 17.0673 12H19Z" fill="white"/>
+                                    <path d="M6.93274 12C6.91671 12.3379 6.93939 12.6735 7 13H5.08302C5.02841 12.6744 5 12.3405 5 12H6.93274Z" fill="white"/>
+                                    <path d="M12 19C14.7614 19 17 16.7614 17 14V11H15V14C15 15.6569 13.6569 17 12 17C10.3431 17 9 15.6569 9 14V11H7V14C7 16.7614 9.23858 19 12 19Z" fill="white"/>
+                                    <path d="M11 21H13V23H11V21Z" fill="white"/>
+                                    <path d="M7 22H9V24H7V22Z" fill="white"/>
+                                    <path d="M15 22H17V24H15V22Z" fill="white"/>
+                                </svg>
+                            </button>
+                            <div class="voice-feedback" id="feedback1">Click the microphone and speak your car number</div>
+                        </div>
+                        <div class="speech-hints">
+                            <strong>Tip:</strong> Say your license plate clearly, like "ABC 123" or "XYZ 789"
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Car Type -->
+                    <div class="step" id="step2">
+                        <div class="step-title">
+                            <div class="step-number">2</div>
+                            Select Car Type
+                        </div>
+                        <div class="input-group">
+                            <label>Choose your vehicle type</label>
+                            <div class="options">
+                                <div class="option" data-value="private">Private</div>
+                                <div class="option" data-value="ev">EV</div>
+                                <div class="option" data-value="commercial">Commercial</div>
+                            </div>
+                        </div>
+                        <div class="voice-controls">
+                            <button class="mic-btn" id="mic2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" fill="white"/>
+                                    <path d="M19 12C19 12.3405 18.9716 12.6744 18.917 13H17C17.0606 12.6735 17.0833 12.3379 17.0673 12H19Z" fill="white"/>
+                                    <path d="M6.93274 12C6.91671 12.3379 6.93939 12.6735 7 13H5.08302C5.02841 12.6744 5 12.3405 5 12H6.93274Z" fill="white"/>
+                                    <path d="M12 19C14.7614 19 17 16.7614 17 14V11H15V14C15 15.6569 13.6569 17 12 17C10.3431 17 9 15.6569 9 14V11H7V14C7 16.7614 9.23858 19 12 19Z" fill="white"/>
+                                    <path d="M11 21H13V23H11V21Z" fill="white"/>
+                                    <path d="M7 22H9V24H7V22Z" fill="white"/>
+                                    <path d="M15 22H17V24H15V22Z" fill="white"/>
+                                </svg>
+                            </button>
+                            <div class="voice-feedback" id="feedback2">Click the microphone and say "private", "EV", or "commercial"</div>
+                        </div>
+                        <div class="speech-hints">
+                            <strong>Tip:</strong> Say "private", "E V" (for EV), or "commercial" clearly
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Phone Number -->
+                    <div class="step" id="step3">
+                        <div class="step-title">
+                            <div class="step-number">3</div>
+                            Enter Phone Number
+                        </div>
+                        <div class="input-group">
+                            <label for="phoneNumber">Your Phone Number</label>
+                            <input type="tel" id="phoneNumber" class="input-field" placeholder="Speak your phone number">
+                        </div>
+                        <div class="voice-controls">
+                            <button class="mic-btn" id="mic3">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" fill="white"/>
+                                    <path d="M19 12C19 12.3405 18.9716 12.6744 18.917 13H17C17.0606 12.6735 17.0833 12.3379 17.0673 12H19Z" fill="white"/>
+                                    <path d="M6.93274 12C6.91671 12.3379 6.93939 12.6735 7 13H5.08302C5.02841 12.6744 5 12.3405 5 12H6.93274Z" fill="white"/>
+                                    <path d="M12 19C14.7614 19 17 16.7614 17 14V11H15V14C15 15.6569 13.6569 17 12 17C10.3431 17 9 15.6569 9 14V11H7V14C7 16.7614 9.23858 19 12 19Z" fill="white"/>
+                                    <path d="M11 21H13V23H11V21Z" fill="white"/>
+                                    <path d="M7 22H9V24H7V22Z" fill="white"/>
+                                    <path d="M15 22H17V24H15V22Z" fill="white"/>
+                                </svg>
+                            </button>
+                            <div class="voice-feedback" id="feedback3">Click the microphone and speak your phone number</div>
+                        </div>
+                        <div class="speech-hints">
+                            <strong>Tip:</strong> Say your number clearly, like "555 123 4567" or "555-123-4567"
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Email -->
+                    <div class="step" id="step4">
+                        <div class="step-title">
+                            <div class="step-number">4</div>
+                            Enter Email Address
+                        </div>
+                        <div class="input-group">
+                            <label for="email">Your Email</label>
+                            <input type="email" id="email" class="input-field" placeholder="Speak your email address">
+                            <div class="email-examples">
+                                <strong>Examples:</strong> "john.doe at gmail.com", "jane underscore smith at company dot com"
+                            </div>
+                        </div>
+                        <div class="voice-controls">
+                            <button class="mic-btn" id="mic4">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" fill="white"/>
+                                    <path d="M19 12C19 12.3405 18.9716 12.6744 18.917 13H17C17.0606 12.6735 17.0833 12.3379 17.0673 12H19Z" fill="white"/>
+                                    <path d="M6.93274 12C6.91671 12.3379 6.93939 12.6735 7 13H5.08302C5.02841 12.6744 5 12.3405 5 12H6.93274Z" fill="white"/>
+                                    <path d="M12 19C14.7614 19 17 16.7614 17 14V11H15V14C15 15.6569 13.6569 17 12 17C10.3431 17 9 15.6569 9 14V11H7V14C7 16.7614 9.23858 19 12 19Z" fill="white"/>
+                                    <path d="M11 21H13V23H11V21Z" fill="white"/>
+                                    <path d="M7 22H9V24H7V22Z" fill="white"/>
+                                    <path d="M15 22H17V24H15V22Z" fill="white"/>
+                                </svg>
+                            </button>
+                            <div class="voice-feedback" id="feedback4">Click the microphone and speak your email address</div>
+                        </div>
+                        <div class="speech-hints">
+                            <strong>Tip:</strong> Say "at" for @, "dot" for ., and "underscore" for _. Example: "john underscore doe at gmail dot com"
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Parking Slot -->
+                    <div class="step" id="step5">
+                        <div class="step-title">
+                            <div class="step-number">5</div>
+                            Select Parking Slot
+                        </div>
+                        <div class="input-group">
+                            <label>Choose an available parking slot</label>
+                            <div class="options" id="slotOptions">
+                                <!-- Slot options will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="voice-controls">
+                            <button class="mic-btn" id="mic5">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" fill="white"/>
+                                    <path d="M19 12C19 12.3405 18.9716 12.6744 18.917 13H17C17.0606 12.6735 17.0833 12.3379 17.0673 12H19Z" fill="white"/>
+                                    <path d="M6.93274 12C6.91671 12.3379 6.93939 12.6735 7 13H5.08302C5.02841 12.6744 5 12.3405 5 12H6.93274Z" fill="white"/>
+                                    <path d="M12 19C14.7614 19 17 16.7614 17 14V11H15V14C15 15.6569 13.6569 17 12 17C10.3431 17 9 15.6569 9 14V11H7V14C7 16.7614 9.23858 19 12 19Z" fill="white"/>
+                                    <path d="M11 21H13V23H11V21Z" fill="white"/>
+                                    <path d="M7 22H9V24H7V22Z" fill="white"/>
+                                    <path d="M15 22H17V24H15V22Z" fill="white"/>
+                                </svg>
+                            </button>
+                            <div class="voice-feedback" id="feedback5">Click the microphone and say a slot number (1-4)</div>
+                        </div>
+                        <div class="speech-hints">
+                            <strong>Tip:</strong> Only available slots can be selected. Say "slot one", "slot two", etc.
+                        </div>
+                    </div>
+
+                    <!-- Step 6: Time Duration -->
+                    <div class="step" id="step6">
+                        <div class="step-title">
+                            <div class="step-number">6</div>
+                            Select Time Duration
+                        </div>
+                        <div class="input-group">
+                            <label for="timeDuration">Parking Duration</label>
+                            <input type="text" id="timeDuration" class="input-field" placeholder="Speak your parking duration">
+                            <div class="email-examples">
+                                <strong>Note:</strong> You'll receive SMS reminders before your time expires
+                            </div>
+                        </div>
+                        <div class="voice-controls">
+                            <button class="mic-btn" id="mic6">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" fill="white"/>
+                                    <path d="M19 12C19 12.3405 18.9716 12.6744 18.917 13H17C17.0606 12.6735 17.0833 12.3379 17.0673 12H19Z" fill="white"/>
+                                    <path d="M6.93274 12C6.91671 12.3379 6.93939 12.6735 7 13H5.08302C5.02841 12.6744 5 12.3405 5 12H6.93274Z" fill="white"/>
+                                    <path d="M12 19C14.7614 19 17 16.7614 17 14V11H15V14C15 15.6569 13.6569 17 12 17C10.3431 17 9 15.6569 9 14V11H7V14C7 16.7614 9.23858 19 12 19Z" fill="white"/>
+                                    <path d="M11 21H13V23H11V21Z" fill="white"/>
+                                    <path d="M7 22H9V24H7V22Z" fill="white"/>
+                                    <path d="M15 22H17V24H15V22Z" fill="white"/>
+                                </svg>
+                            </button>
+                            <div class="voice-feedback" id="feedback6">Click the microphone and speak your parking duration (e.g., "2 PM to 3 PM")</div>
+                        </div>
+                        <div class="speech-hints">
+                            <strong>Tip:</strong> Say time ranges like "2 PM to 5 PM", "10 AM until 2 PM", or "3 hours"
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="navigation">
+                        <button class="btn btn-prev" id="prevBtn">Previous</button>
+                        <button class="btn btn-next" id="nextBtn">Next</button>
+                        <button class="btn btn-book" id="bookBtn" style="display: none;">Book Parking</button>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="instructions">
+                        <h3>How to use voice booking:</h3>
+                        <ul>
+                            <li>Click the microphone button on each step</li>
+                            <li>Speak clearly when prompted</li>
+                            <li>Say "next" to move to the next step</li>
+                            <li>Say "book" on the final step to confirm your booking</li>
+                            <li>Say "previous" to go back to the previous step</li>
+                            <li>You'll receive SMS reminders before your parking time expires</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Screen -->
+        <div class="confirmation" id="confirmation">
+            <div class="confirmation-icon">✓</div>
+            <h2>Booking Confirmed!</h2>
+            <p>Your parking spot has been successfully booked. You'll receive SMS reminders.</p>
+
+            <div class="booking-details">
+                <div class="detail-row">
+                    <div class="detail-label">Car Number:</div>
+                    <div class="detail-value" id="confirmCarNumber">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Car Type:</div>
+                    <div class="detail-value" id="confirmCarType">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Phone Number:</div>
+                    <div class="detail-value" id="confirmPhone">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Email:</div>
+                    <div class="detail-value" id="confirmEmail">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Parking Slot:</div>
+                    <div class="detail-value" id="confirmSlot">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Time Duration:</div>
+                    <div class="detail-value" id="confirmDuration">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Booking ID:</div>
+                    <div class="detail-value" id="confirmBookingId">-</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">SMS Alerts:</div>
+                    <div class="detail-value">Enabled (1hr, 30min, 15min reminders)</div>
+                </div>
+            </div>
+
+            <button class="btn btn-book" id="newBookingBtn">Make Another Booking</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDxylltNCIocdn_6w_XRKp2GOOBwMLieDY",
+            authDomain: "smart-parking-system-8fdbd.firebaseapp.com",
+            databaseURL: "https://smart-parking-system-8fdbd-default-rtdb.firebaseio.com",
+            projectId: "smart-parking-system-8fdbd",
+            storageBucket: "smart-parking-system-8fdbd.firebasestorage.app",
+            messagingSenderId: "310804168417",
+            appId: "1:310804168417:web:5748030e62e3d5608fc1a0"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // DOM Elements
+        const steps = document.querySelectorAll('.step');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const bookBtn = document.getElementById('bookBtn');
+        const newBookingBtn = document.getElementById('newBookingBtn');
+        const confirmation = document.getElementById('confirmation');
+        const slotsContainer = document.getElementById('slotsContainer');
+        const slotOptions = document.getElementById('slotOptions');
+        const systemStatus = document.getElementById('systemStatus');
+        const notificationStatus = document.getElementById('notificationStatus');
+        const smsStatus = document.getElementById('smsStatus');
+
+        // Form fields
+        const carNumber = document.getElementById('carNumber');
+        const phoneNumber = document.getElementById('phoneNumber');
+        const email = document.getElementById('email');
+        const timeDuration = document.getElementById('timeDuration');
+
+        // Voice feedback elements
+        const feedbacks = [
+            document.getElementById('feedback1'),
+            document.getElementById('feedback2'),
+            document.getElementById('feedback3'),
+            document.getElementById('feedback4'),
+            document.getElementById('feedback5'),
+            document.getElementById('feedback6')
+        ];
+
+        // Confirmation elements
+        const confirmCarNumber = document.getElementById('confirmCarNumber');
+        const confirmCarType = document.getElementById('confirmCarType');
+        const confirmPhone = document.getElementById('confirmPhone');
+        const confirmEmail = document.getElementById('confirmEmail');
+        const confirmSlot = document.getElementById('confirmSlot');
+        const confirmDuration = document.getElementById('confirmDuration');
+        const confirmBookingId = document.getElementById('confirmBookingId');
+
+        // State variables
+        let currentStep = 0;
+        let selectedCarType = '';
+        let selectedSlot = '';
+        let parkingData = {
+            slot1: { status: 'unknown', distance: 0, bookedUntil: null },
+            slot2: { status: 'unknown', distance: 0, bookedUntil: null },
+            slot3: { status: 'unknown', distance: 0, bookedUntil: null },
+            slot4: { status: 'unknown', distance: 0, bookedUntil: null }
+        };
+
+        // Initialize Speech Recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = function() {
+                console.log('Speech recognition started');
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript.toLowerCase().trim();
+                console.log('Speech recognized:', transcript);
+
+                processVoiceCommand(transcript);
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                updateFeedback(currentStep, `Error: ${event.error}. Please try again.`);
+            };
+
+            recognition.onend = function() {
+                console.log('Speech recognition ended');
+                // Remove listening class from all mic buttons
+                document.querySelectorAll('.mic-btn').forEach(btn => {
+                    btn.classList.remove('listening');
+                });
+            };
+        } else {
+            alert('Your browser does not support speech recognition. Please use Chrome or Edge.');
+        }
+
+        // Initialize the app
+        function initApp() {
+            // Set up event listeners for mic buttons
+            document.querySelectorAll('.mic-btn').forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    startListening(index);
+                });
+            });
+
+            // Set up event listeners for option buttons
+            document.querySelectorAll('.option').forEach(option => {
+                option.addEventListener('click', () => {
+                    // Remove selected class from all options in the same group
+                    option.parentElement.querySelectorAll('.option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+
+                    // Add selected class to clicked option
+                    option.classList.add('selected');
+
+                    // Update the corresponding value
+                    if (option.parentElement.parentElement.id === 'step2') {
+                        selectedCarType = option.dataset.value;
+                        updateFeedback(1, `Selected: ${option.textContent}`);
+                    }
+                });
+            });
+
+            // Set up navigation buttons
+            prevBtn.addEventListener('click', goToPreviousStep);
+            nextBtn.addEventListener('click', goToNextStep);
+            bookBtn.addEventListener('click', confirmBooking);
+            newBookingBtn.addEventListener('click', resetForm);
+
+            // Initialize Firebase listeners
+            initializeFirebase();
+
+            // Show first step
+            showStep(currentStep);
+        }
+
+        // Initialize Firebase real-time listeners
+        function initializeFirebase() {
+            // Listen for parking slot sensor data
+            const slotsRef = ref(database, 'parkingSlots');
+            const bookingsRef = ref(database, 'bookings');
+            const systemRef = ref(database, 'system');
+
+            onValue(slotsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    parkingData = {...parkingData, ...data};
+                    updateParkingDisplay();
+                    updateSlotOptions();
+                    systemStatus.textContent = 'Connected to parking sensors';
+                    systemStatus.className = 'system-status connected';
+                }
+            }, (error) => {
+                console.error('Firebase error:', error);
+                systemStatus.textContent = 'Disconnected from sensors - Using demo data';
+                systemStatus.className = 'system-status disconnected';
+
+                // Use demo data if Firebase fails
+                parkingData = {
+                    slot1: { status: 'available', distance: 150, bookedUntil: null },
+                    slot2: { status: 'occupied', distance: 25, bookedUntil: null },
+                    slot3: { status: 'available', distance: 180, bookedUntil: null },
+                    slot4: { status: 'reserved', distance: 100, bookedUntil: '2023-12-01T15:00:00', remainingTime: 1800 }
+                };
+                updateParkingDisplay();
+                updateSlotOptions();
+            });
+
+            // Listen for booking updates including remaining time
+            onValue(bookingsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    // Update remaining time in parking data
+                    Object.keys(data).forEach(slotId => {
+                        if (parkingData[slotId] && data[slotId].remainingTime !== undefined) {
+                            parkingData[slotId].remainingTime = data[slotId].remainingTime;
+                        }
+                    });
+                    updateRemainingTimeDisplay();
+                }
+            });
+
+            // Listen for system status (GSM module status)
+            onValue(systemRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if (data.gsmStatus) {
+                        notificationStatus.textContent = `GSM Module: ${data.gsmStatus}`;
+                    }
+                    if (data.smsStatus) {
+                        smsStatus.textContent = `SMS Service: ${data.smsStatus}`;
+                    }
+                    if (data.lastSMS) {
+                        const notificationItem = document.createElement('div');
+                        notificationItem.className = 'notification-item';
+                        notificationItem.textContent = `Last SMS: ${data.lastSMS}`;
+                        document.querySelector('.notifications-panel').appendChild(notificationItem);
+
+                        // Keep only last 3 notifications
+                        const notifications = document.querySelectorAll('.notification-item');
+                        if (notifications.length > 5) {
+                            notifications[2].remove();
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update parking slot display
+        function updateParkingDisplay() {
+            slotsContainer.innerHTML = '';
+
+            Object.keys(parkingData).forEach(slotId => {
+                const slot = parkingData[slotId];
+                const slotElement = document.createElement('div');
+                slotElement.className = `slot ${slot.status}`;
+                slotElement.id = slotId;
+
+                const slotNumber = document.createElement('div');
+                slotNumber.className = 'slot-number';
+                slotNumber.textContent = `Slot ${slotId.charAt(slotId.length-1)}`;
+
+                const slotStatus = document.createElement('div');
+                slotStatus.className = 'slot-status';
+
+                let statusText = '';
+                let timeText = '';
+
+                switch(slot.status) {
+                    case 'available':
+                        statusText = 'Available';
+                        timeText = 'Free';
+                        break;
+                    case 'occupied':
+                        statusText = 'Occupied';
+                        timeText = 'In Use';
+                        break;
+                    case 'reserved':
+                        statusText = 'Reserved';
+                        if (slot.bookedUntil) {
+                            const until = new Date(slot.bookedUntil);
+                            timeText = `Until ${until.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                        } else {
+                            timeText = 'Booked';
+                        }
+                        break;
+                    default:
+                        statusText = 'Unknown';
+                        timeText = 'N/A';
+                }
+
+                slotStatus.textContent = statusText;
+
+                const slotTime = document.createElement('div');
+                slotTime.className = 'slot-time';
+                slotTime.textContent = timeText;
+
+                const slotDistance = document.createElement('div');
+                slotDistance.className = 'slot-distance';
+                slotDistance.textContent = `Distance: ${slot.distance}cm`;
+
+                const remainingTime = document.createElement('div');
+                remainingTime.className = 'remaining-time';
+                remainingTime.id = `remainingTime${slotId.charAt(slotId.length-1)}`;
+
+                slotElement.appendChild(slotNumber);
+                slotElement.appendChild(slotStatus);
+                slotElement.appendChild(slotTime);
+                slotElement.appendChild(slotDistance);
+                slotElement.appendChild(remainingTime);
+
+                slotsContainer.appendChild(slotElement);
+            });
+
+            updateRemainingTimeDisplay();
+        }
+
+        // Update remaining time display
+        function updateRemainingTimeDisplay() {
+            Object.keys(parkingData).forEach(slotId => {
+                const slot = parkingData[slotId];
+                const remainingTimeElement = document.getElementById(`remainingTime${slotId.charAt(slotId.length-1)}`);
+
+                if (slot.status === 'reserved' && slot.remainingTime !== undefined && slot.remainingTime > 0) {
+                    const minutes = Math.floor(slot.remainingTime / 60);
+                    const hours = Math.floor(minutes / 60);
+                    const remainingMinutes = minutes % 60;
+
+                    let timeText = '';
+                    if (hours > 0) {
+                        timeText = `${hours}h ${remainingMinutes}m remaining`;
+                    } else {
+                        timeText = `${minutes}m remaining`;
+                    }
+
+                    remainingTimeElement.textContent = timeText;
+                    remainingTimeElement.style.display = 'block';
+
+                    // Add warning class if less than 15 minutes
+                    if (slot.remainingTime < 900) {
+                        remainingTimeElement.classList.add('time-warning');
+                    } else {
+                        remainingTimeElement.classList.remove('time-warning');
+                    }
+                } else {
+                    remainingTimeElement.style.display = 'none';
+                    remainingTimeElement.classList.remove('time-warning');
+                }
+            });
+        }
+
+        // Update slot options in booking form
+        function updateSlotOptions() {
+            slotOptions.innerHTML = '';
+
+            Object.keys(parkingData).forEach(slotId => {
+                const slot = parkingData[slotId];
+                if (slot.status === 'available') {
+                    const option = document.createElement('div');
+                    option.className = 'option';
+                    option.dataset.value = slotId;
+                    option.textContent = `Slot ${slotId.charAt(slotId.length-1)}`;
+
+                    option.addEventListener('click', () => {
+                        // Remove selected class from all options
+                        slotOptions.querySelectorAll('.option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+
+                        // Add selected class to clicked option
+                        option.classList.add('selected');
+                        selectedSlot = slotId;
+                        updateFeedback(4, `Selected: ${option.textContent}`);
+                    });
+
+                    slotOptions.appendChild(option);
+                }
+            });
+
+            // If no available slots, show message
+            if (slotOptions.children.length === 0) {
+                const message = document.createElement('div');
+                message.textContent = 'No available slots at the moment';
+                message.style.textAlign = 'center';
+                message.style.padding = '15px';
+                message.style.color = '#666';
+                slotOptions.appendChild(message);
+            }
+        }
+
+        // Start listening for voice input
+        function startListening(stepIndex) {
+            if (!recognition) {
+                alert('Speech recognition is not supported in your browser.');
+                return;
+            }
+
+            // Add listening class to the current mic button
+            document.getElementById(`mic${stepIndex + 1}`).classList.add('listening');
+
+            // Update feedback
+            updateFeedback(stepIndex, 'Listening... Speak now');
+
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Error starting speech recognition:', error);
+            }
+        }
+
+        // Process voice commands
+        function processVoiceCommand(transcript) {
+            // Check for navigation commands
+            if (transcript.includes('next')) {
+                goToNextStep();
+                return;
+            }
+
+            if (transcript.includes('previous')) {
+                goToPreviousStep();
+                return;
+            }
+
+            if (transcript.includes('book')) {
+                if (currentStep === 5) {
+                    confirmBooking();
+                } else {
+                    updateFeedback(currentStep, 'Please complete all steps before booking');
+                }
+                return;
+            }
+
+            // Process based on current step
+            switch (currentStep) {
+                case 0: // Car number
+                    carNumber.value = transcript.toUpperCase();
+                    updateFeedback(0, `Car number set to: ${transcript.toUpperCase()}`);
+                    break;
+
+                case 1: // Car type
+                    if (transcript.includes('private')) {
+                        selectOption(1, 'private');
+                    } else if (transcript.includes('ev') || transcript.includes('electric')) {
+                        selectOption(1, 'ev');
+                    } else if (transcript.includes('commercial')) {
+                        selectOption(1, 'commercial');
+                    } else {
+                        updateFeedback(1, `Please say "private", "EV", or "commercial"`);
+                    }
+                    break;
+
+                case 2: // Phone number
+                    // Enhanced phone number processing
+                    let phone = transcript.replace(/\D/g, '');
+                    if (phone.length === 10) {
+                        phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+                    } else if (phone.length === 11 && phone.startsWith('1')) {
+                        phone = phone.substring(1);
+                        phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+                    }
+                    phoneNumber.value = phone;
+                    updateFeedback(2, `Phone number set to: ${phone}`);
+                    break;
+
+                case 3: // Email
+                    // Enhanced email processing
+                    let processedEmail = processEmail(transcript);
+                    if (isValidEmail(processedEmail)) {
+                        email.value = processedEmail;
+                        updateFeedback(3, `Email set to: ${processedEmail}`);
+                    } else {
+                        updateFeedback(3, `Please provide a valid email address. Try saying "john dot doe at gmail dot com"`);
+                    }
+                    break;
+
+                case 4: // Parking slot
+                    if (transcript.includes('1') || transcript.includes('one') || transcript.includes('first')) {
+                        selectAvailableSlot('slot1');
+                    } else if (transcript.includes('2') || transcript.includes('two') || transcript.includes('second')) {
+                        selectAvailableSlot('slot2');
+                    } else if (transcript.includes('3') || transcript.includes('three') || transcript.includes('third')) {
+                        selectAvailableSlot('slot3');
+                    } else if (transcript.includes('4') || transcript.includes('four') || transcript.includes('fourth')) {
+                        selectAvailableSlot('slot4');
+                    } else {
+                        updateFeedback(4, `Please say "slot 1", "slot 2", "slot 3", or "slot 4"`);
+                    }
+                    break;
+
+                case 5: // Time duration
+                    timeDuration.value = processTimeDuration(transcript);
+                    updateFeedback(5, `Duration set to: ${timeDuration.value}`);
+                    break;
+            }
+        }
+
+        // Select an available slot
+        function selectAvailableSlot(slotId) {
+            if (parkingData[slotId] && parkingData[slotId].status === 'available') {
+                // Remove selected class from all options
+                slotOptions.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+
+                // Add selected class to the matching option
+                const option = Array.from(slotOptions.querySelectorAll('.option')).find(
+                    opt => opt.dataset.value === slotId
+                );
+
+                if (option) {
+                    option.classList.add('selected');
+                    selectedSlot = slotId;
+                    updateFeedback(4, `Selected: ${option.textContent}`);
+                }
+            } else {
+                updateFeedback(4, `Slot ${slotId.charAt(slotId.length-1)} is not available. Please choose another slot.`);
+            }
+        }
+
+        // Process email from speech
+        function processEmail(transcript) {
+            // Replace common speech patterns with email symbols
+            let email = transcript
+                .replace(/\s+(at|add|app)\s+/gi, '@')
+                .replace(/\s+(dot|point|period)\s+/gi, '.')
+                .replace(/\s+(underscore|underline|under)\s+/gi, '_')
+                .replace(/\s+(dash|hyphen|minus)\s+/gi, '-')
+                .replace(/\s+/g, '') // Remove all spaces
+                .toLowerCase();
+
+            // Ensure we have @ and . in the email
+            if (!email.includes('@')) {
+                // Try to find where @ should be
+                const atIndex = transcript.toLowerCase().indexOf(' at ');
+                if (atIndex !== -1) {
+                    const beforeAt = transcript.substring(0, atIndex).replace(/\s+/g, '');
+                    const afterAt = transcript.substring(atIndex + 4).replace(/\s+/g, '');
+                    email = beforeAt + '@' + afterAt;
+                }
+            }
+
+            return email;
+        }
+
+        // Validate email format
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Process time duration from speech
+        function processTimeDuration(transcript) {
+            // Common time patterns
+            let duration = transcript
+                .replace(/\b(\d+)\s*(\s?pm|am)\s*to\s*(\d+)\s*(\s?pm|am)\b/gi, '$1$2 to $3$4')
+                .replace(/\b(\d+)\s*(\s?pm|am)\s*until\s*(\d+)\s*(\s?pm|am)\b/gi, '$1$2 until $3$4')
+                .replace(/\b(\d+)\s*(\s?pm|am)\s*till\s*(\d+)\s*(\s?pm|am)\b/gi, '$1$2 till $3$4')
+                .replace(/\b(\d+)\s*hours?\b/gi, '$1 hours')
+                .replace(/\b(\d+)\s*hrs?\b/gi, '$1 hours');
+
+            // Capitalize AM/PM for consistency
+            duration = duration.replace(/\b(am|pm)\b/gi, function(match) {
+                return match.toUpperCase();
+            });
+
+            return duration;
+        }
+
+        // Select an option by value
+        function selectOption(stepIndex, value) {
+            const options = document.querySelectorAll(`#step${stepIndex + 1} .option`);
+            options.forEach(option => {
+                if (option.dataset.value === value) {
+                    option.classList.add('selected');
+
+                    if (stepIndex === 1) {
+                        selectedCarType = value;
+                    }
+
+                    updateFeedback(stepIndex, `Selected: ${option.textContent}`);
+                } else {
+                    option.classList.remove('selected');
+                }
+            });
+        }
+
+        // Update feedback message
+        function updateFeedback(stepIndex, message) {
+            feedbacks[stepIndex].textContent = message;
+        }
+
+        // Show a specific step
+        function showStep(stepIndex) {
+            steps.forEach((step, index) => {
+                if (index === stepIndex) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+
+            // Update navigation buttons
+            prevBtn.style.display = stepIndex === 0 ? 'none' : 'block';
+
+            if (stepIndex === steps.length - 1) {
+                nextBtn.style.display = 'none';
+                bookBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                bookBtn.style.display = 'none';
+            }
+        }
+
+        // Go to the next step
+        function goToNextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+
+        // Go to the previous step
+        function goToPreviousStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        // Confirm booking
+        function confirmBooking() {
+            // Validate all fields
+            if (!carNumber.value) {
+                alert('Please enter your car number');
+                currentStep = 0;
+                showStep(currentStep);
+                return;
+            }
+
+            if (!selectedCarType) {
+                alert('Please select your car type');
+                currentStep = 1;
+                showStep(currentStep);
+                return;
+            }
+
+            if (!phoneNumber.value) {
+                alert('Please enter your phone number');
+                currentStep = 2;
+                showStep(currentStep);
+                return;
+            }
+
+            if (!email.value || !isValidEmail(email.value)) {
+                alert('Please enter a valid email address');
+                currentStep = 3;
+                showStep(currentStep);
+                return;
+            }
+
+            if (!selectedSlot) {
+                alert('Please select a parking slot');
+                currentStep = 4;
+                showStep(currentStep);
+                return;
+            }
+
+            if (!timeDuration.value) {
+                alert('Please enter parking duration');
+                currentStep = 5;
+                showStep(currentStep);
+                return;
+            }
+
+            // Generate booking ID
+            const bookingId = 'PARK' + Math.floor(100000 + Math.random() * 900000);
+
+            // Update confirmation details
+            confirmCarNumber.textContent = carNumber.value;
+            confirmCarType.textContent = selectedCarType.charAt(0).toUpperCase() + selectedCarType.slice(1);
+            confirmPhone.textContent = phoneNumber.value;
+            confirmEmail.textContent = email.value;
+            confirmSlot.textContent = selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1);
+            confirmDuration.textContent = timeDuration.value;
+            confirmBookingId.textContent = bookingId;
+
+            // Update Firebase with the reservation
+            updateFirebaseWithBooking(selectedSlot, timeDuration.value, bookingId);
+
+            // Show confirmation screen
+            document.querySelector('.booking-form').style.display = 'none';
+            confirmation.classList.add('active');
+        }
+
+        // Update Firebase with booking information
+        function updateFirebaseWithBooking(slotId, duration, bookingId) {
+            // Calculate end time based on duration
+            const now = new Date();
+            let endTime = new Date(now);
+
+            // Simple duration parsing - in a real app, you'd want more sophisticated parsing
+            if (duration.includes('hour')) {
+                const hours = parseInt(duration) || 1;
+                endTime.setHours(now.getHours() + hours);
+            } else {
+                // Default to 2 hours if we can't parse
+                endTime.setHours(now.getHours() + 2);
+            }
+
+            // Update the slot status in Firebase
+            const slotRef = ref(database, `parkingSlots/${slotId}`);
+            update(slotRef, {
+                status: 'reserved',
+                bookedUntil: endTime.toISOString(),
+                bookingId: bookingId,
+                carNumber: carNumber.value,
+                carType: selectedCarType
+            });
+
+            // Also save the booking details
+            const bookingRef = ref(database, `bookings/${bookingId}`);
+            set(bookingRef, {
+                slot: slotId,
+                carNumber: carNumber.value,
+                carType: selectedCarType,
+                phone: phoneNumber.value,
+                email: email.value,
+                duration: duration,
+                bookedAt: now.toISOString(),
+                bookedUntil: endTime.toISOString(),
+                status: 'active'
+            });
+
+            // Send initial confirmation SMS via system update
+            const systemRef = ref(database, 'system');
+            update(systemRef, {
+                lastSMS: `Confirmation sent to ${phoneNumber.value} for ${slotId}`,
+                lastBooking: bookingId,
+                lastUpdate: now.toISOString()
+            });
+        }
+
+        // Reset form for new booking
+        function resetForm() {
+            // Reset form fields
+            carNumber.value = '';
+            phoneNumber.value = '';
+            email.value = '';
+            timeDuration.value = '';
+
+            // Reset selections
+            selectedCarType = '';
+            selectedSlot = '';
+
+            // Reset option selections
+            document.querySelectorAll('.option').forEach(option => {
+                option.classList.remove('selected');
+            });
+
+            // Reset feedback messages
+            feedbacks.forEach((feedback, index) => {
+                if (index === 0) {
+                    feedback.textContent = 'Click the microphone and speak your car number';
+                } else if (index === 1) {
+                    feedback.textContent = 'Click the microphone and say "private", "EV", or "commercial"';
+                } else if (index === 2) {
+                    feedback.textContent = 'Click the microphone and speak your phone number';
+                } else if (index === 3) {
+                    feedback.textContent = 'Click the microphone and speak your email address';
+                } else if (index === 4) {
+                    feedback.textContent = 'Click the microphone and say a slot number (1-4)';
+                } else if (index === 5) {
+                    feedback.textContent = 'Click the microphone and speak your parking duration (e.g., "2 PM to 3 PM")';
+                }
+            });
+
+            // Reset to first step
+            currentStep = 0;
+            showStep(currentStep);
+
+            // Show booking form again
+            document.querySelector('.booking-form').style.display = 'block';
+            confirmation.classList.remove('active');
+        }
+
+        // Initialize the app when the page loads
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
