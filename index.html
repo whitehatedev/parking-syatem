@@ -93,11 +93,17 @@
         .slot.occupied {
             border-color: #dc3545;
             background: #fff5f5;
+            animation: alertPulse 2s infinite;
         }
 
         .slot.reserved {
             border-color: #ffc107;
             background: #fffef0;
+        }
+
+        .slot.unknown {
+            border-color: #6c757d;
+            background: #f8f9fa;
         }
 
         .slot-number {
@@ -148,6 +154,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .alert-indicator {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            animation: blink 1s infinite;
         }
 
         .booking-form-container {
@@ -245,6 +263,13 @@
             background: #1a2a6c;
             color: white;
             border-color: #1a2a6c;
+        }
+
+        .option.disabled {
+            background: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+            border-color: #dee2e6;
         }
 
         .voice-controls {
@@ -400,6 +425,12 @@
             100% { opacity: 1; }
         }
 
+        @keyframes alertPulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
         .instructions {
             background: #e9f7fe;
             padding: 15px;
@@ -481,6 +512,27 @@
             border-bottom: none;
         }
 
+        .sound-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sound-toggle {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .sound-toggle.muted {
+            background: #6c757d;
+        }
+
         @media (max-width: 900px) {
             .dashboard {
                 flex-direction: column;
@@ -533,6 +585,11 @@
 
                 <div class="system-status" id="systemStatus">
                     Connecting to parking sensors...
+                </div>
+
+                <div class="sound-controls">
+                    <button class="sound-toggle" id="soundToggle">🔊 Sound On</button>
+                    <span>Alerts for unauthorized parking</span>
                 </div>
 
                 <div class="notifications-panel">
@@ -751,6 +808,7 @@
                             <li>Say "book" on the final step to confirm your booking</li>
                             <li>Say "previous" to go back to the previous step</li>
                             <li>You'll receive SMS reminders before your parking time expires</li>
+                            <li>Red slots with alerts indicate unauthorized parking</li>
                         </ul>
                     </div>
                 </div>
@@ -802,6 +860,11 @@
         </div>
     </div>
 
+    <!-- Audio element for beep sound -->
+    <audio id="alertSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+    </audio>
+
     <!-- Firebase SDK -->
     <script type="module">
         // Import the functions you need from the SDKs you need
@@ -835,6 +898,8 @@
         const systemStatus = document.getElementById('systemStatus');
         const notificationStatus = document.getElementById('notificationStatus');
         const smsStatus = document.getElementById('smsStatus');
+        const soundToggle = document.getElementById('soundToggle');
+        const alertSound = document.getElementById('alertSound');
 
         // Form fields
         const carNumber = document.getElementById('carNumber');
@@ -865,6 +930,10 @@
         let currentStep = 0;
         let selectedCarType = '';
         let selectedSlot = '';
+        let soundEnabled = true;
+        let lastAlertTime = 0;
+        let alertCooldown = 5000; // 5 seconds between alerts
+        
         let parkingData = {
             slot1: { status: 'unknown', distance: 0, bookedUntil: null },
             slot2: { status: 'unknown', distance: 0, bookedUntil: null },
@@ -921,6 +990,8 @@
             // Set up event listeners for option buttons
             document.querySelectorAll('.option').forEach(option => {
                 option.addEventListener('click', () => {
+                    if (option.classList.contains('disabled')) return;
+                    
                     // Remove selected class from all options in the same group
                     option.parentElement.querySelectorAll('.option').forEach(opt => {
                         opt.classList.remove('selected');
@@ -943,11 +1014,57 @@
             bookBtn.addEventListener('click', confirmBooking);
             newBookingBtn.addEventListener('click', resetForm);
 
+            // Sound toggle
+            soundToggle.addEventListener('click', toggleSound);
+
             // Initialize Firebase listeners
             initializeFirebase();
 
             // Show first step
             showStep(currentStep);
+        }
+
+        // Toggle sound alerts
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundToggle.textContent = '🔊 Sound On';
+                soundToggle.classList.remove('muted');
+            } else {
+                soundToggle.textContent = '🔇 Sound Off';
+                soundToggle.classList.add('muted');
+            }
+        }
+
+        // Play alert sound
+        function playAlertSound() {
+            if (!soundEnabled) return;
+            
+            const now = Date.now();
+            if (now - lastAlertTime < alertCooldown) return;
+            
+            try {
+                // Create a simple beep sound
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+                
+                lastAlertTime = now;
+            } catch (error) {
+                console.log('Audio context not supported:', error);
+            }
         }
 
         // Initialize Firebase real-time listeners
@@ -960,11 +1077,15 @@
             onValue(slotsRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
+                    const previousData = {...parkingData};
                     parkingData = {...parkingData, ...data};
                     updateParkingDisplay();
                     updateSlotOptions();
                     systemStatus.textContent = 'Connected to parking sensors';
                     systemStatus.className = 'system-status connected';
+
+                    // Check for unauthorized occupancy
+                    checkUnauthorizedParking(previousData, parkingData);
                 }
             }, (error) => {
                 console.error('Firebase error:', error);
@@ -972,14 +1093,18 @@
                 systemStatus.className = 'system-status disconnected';
 
                 // Use demo data if Firebase fails
-                parkingData = {
+                const demoData = {
                     slot1: { status: 'available', distance: 150, bookedUntil: null },
                     slot2: { status: 'occupied', distance: 25, bookedUntil: null },
                     slot3: { status: 'available', distance: 180, bookedUntil: null },
                     slot4: { status: 'reserved', distance: 100, bookedUntil: '2023-12-01T15:00:00', remainingTime: 1800 }
                 };
+                
+                const previousData = {...parkingData};
+                parkingData = demoData;
                 updateParkingDisplay();
                 updateSlotOptions();
+                checkUnauthorizedParking(previousData, parkingData);
             });
 
             // Listen for booking updates including remaining time
@@ -1022,6 +1147,30 @@
             });
         }
 
+        // Check for unauthorized parking (occupied without booking)
+        function checkUnauthorizedParking(previousData, currentData) {
+            Object.keys(currentData).forEach(slotId => {
+                const currentSlot = currentData[slotId];
+                const previousSlot = previousData[slotId];
+                
+                // Check if slot became occupied without being reserved
+                if (currentSlot.status === 'occupied' && 
+                    currentSlot.status !== previousSlot.status &&
+                    !currentSlot.bookingId) {
+                    
+                    console.log(`Unauthorized parking detected in ${slotId}`);
+                    playAlertSound();
+                    
+                    // Update system status with alert
+                    const systemRef = ref(database, 'system');
+                    update(systemRef, {
+                        lastAlert: `Unauthorized parking in ${slotId}`,
+                        alertTime: new Date().toISOString()
+                    });
+                }
+            });
+        }
+
         // Update parking slot display
         function updateParkingDisplay() {
             slotsContainer.innerHTML = '';
@@ -1050,6 +1199,13 @@
                     case 'occupied':
                         statusText = 'Occupied';
                         timeText = 'In Use';
+                        // Add alert indicator for unauthorized parking
+                        if (!slot.bookingId) {
+                            const alertIndicator = document.createElement('div');
+                            alertIndicator.className = 'alert-indicator';
+                            alertIndicator.title = 'Unauthorized parking detected!';
+                            slotElement.appendChild(alertIndicator);
+                        }
                         break;
                     case 'reserved':
                         statusText = 'Reserved';
@@ -1062,7 +1218,7 @@
                         break;
                     default:
                         statusText = 'Unknown';
-                        timeText = 'N/A';
+                        timeText = 'Checking...';
                 }
 
                 slotStatus.textContent = statusText;
@@ -1131,12 +1287,13 @@
 
             Object.keys(parkingData).forEach(slotId => {
                 const slot = parkingData[slotId];
-                if (slot.status === 'available') {
-                    const option = document.createElement('div');
-                    option.className = 'option';
-                    option.dataset.value = slotId;
-                    option.textContent = `Slot ${slotId.charAt(slotId.length-1)}`;
+                const option = document.createElement('div');
+                option.className = 'option';
+                option.dataset.value = slotId;
+                option.textContent = `Slot ${slotId.charAt(slotId.length-1)}`;
 
+                // Only allow booking available and unknown slots
+                if (slot.status === 'available' || slot.status === 'unknown') {
                     option.addEventListener('click', () => {
                         // Remove selected class from all options
                         slotOptions.querySelectorAll('.option').forEach(opt => {
@@ -1148,13 +1305,18 @@
                         selectedSlot = slotId;
                         updateFeedback(4, `Selected: ${option.textContent}`);
                     });
-
-                    slotOptions.appendChild(option);
+                } else {
+                    // Disable occupied and reserved slots
+                    option.classList.add('disabled');
+                    option.title = 'This slot is not available for booking';
                 }
+
+                slotOptions.appendChild(option);
             });
 
             // If no available slots, show message
-            if (slotOptions.children.length === 0) {
+            const availableSlots = Array.from(slotOptions.querySelectorAll('.option:not(.disabled)'));
+            if (availableSlots.length === 0) {
                 const message = document.createElement('div');
                 message.textContent = 'No available slots at the moment';
                 message.style.textAlign = 'center';
@@ -1272,7 +1434,8 @@
 
         // Select an available slot
         function selectAvailableSlot(slotId) {
-            if (parkingData[slotId] && parkingData[slotId].status === 'available') {
+            const slot = parkingData[slotId];
+            if (slot && (slot.status === 'available' || slot.status === 'unknown')) {
                 // Remove selected class from all options
                 slotOptions.querySelectorAll('.option').forEach(opt => {
                     opt.classList.remove('selected');
@@ -1280,7 +1443,7 @@
 
                 // Add selected class to the matching option
                 const option = Array.from(slotOptions.querySelectorAll('.option')).find(
-                    opt => opt.dataset.value === slotId
+                    opt => opt.dataset.value === slotId && !opt.classList.contains('disabled')
                 );
 
                 if (option) {
